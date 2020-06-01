@@ -187,7 +187,6 @@ export default {
         "')";
       let sql =
         "INSERT INTO stockLog(name,code,opt,price,num,ctime) VALUES " + values;
-      console.log("sql", sql);
       this.dataBase.transaction(function(ctx, result) {
         ctx.executeSql(sql);
       });
@@ -215,7 +214,6 @@ export default {
       });
     },
     /*计算持仓*/
-
     totalInterest() {
       let numTotal = {};
       let priceTotal = {};
@@ -241,7 +239,6 @@ export default {
         //持仓的
         if (numTotal[i] > 0) {
           let buyPrice = priceTotal[i] / numTotal[i];
-
           buyPrice = Math.floor(buyPrice * 1000) / 1000;
           let item = {
             name: name[i],
@@ -262,8 +259,47 @@ export default {
           this.clearance.push(item);
         }
       }
+      //get price
+      this.showPrice();
       console.log("numTotal", numTotal);
       console.log("priceTotal", priceTotal);
+    },
+    /*通过新浪接口获取股价*/
+    showPrice() {
+      let list = "";
+      for (let i = 0; i < this.interest.length; i++) {
+        let code = this.interest[i].code.toLowerCase();
+        list = list.length == 0 ? code : list + "," + code;
+      }
+      let url = "http://hq.sinajs.cn/list=" + list;
+      var body = document.getElementsByTagName("body")[0];
+      var jsNode = document.createElement("script");
+      jsNode.setAttribute("type", "text/javascript");
+      jsNode.setAttribute("src", url);
+      body.appendChild(jsNode);
+      let that = this;
+      jsNode.onload = function() {
+        console.log("window", window);
+
+        for (let i = 0; i < that.interest.length; i++) {
+          let code = that.interest[i].code;
+          if (window["hq_str_" + code.toLowerCase()]) {
+            let tmpPrice = window["hq_str_" + code.toLowerCase()].split(",");
+            that.interest[i].price = tmpPrice[3];
+            that.interest[i].market = tmpPrice[3] * that.interest[i].num;
+            that.interest[i].market =
+              Math.floor(that.interest[i].market * 1) / 1;
+            that.interest[i].profitLoss =
+              that.interest[i].market -
+              that.interest[i].buyPrice * that.interest[i].num;
+            that.interest[i].profitLoss =
+              Math.floor(that.interest[i].profitLoss * 1) / 1;
+          }
+        }
+        that.interest = JSON.parse(JSON.stringify(that.interest));
+        console.log("interest", that.interest);
+        // do something
+      };
     },
 
     tirggerFile($event) {
@@ -271,10 +307,8 @@ export default {
       if (window.FileReader) {
         var fr = new FileReader();
         fr.readAsText(file[0], "gb2312");
-        console.log("fr", fr);
         fr.onload = e => {
           let lines = e.target.result.split("\n");
-          console.log("lines", lines);
           for (let i = 0; i < lines.length; i++) {
             let line = lines[i].split(",");
             if (i > 1 && line[1]) {
