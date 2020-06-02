@@ -348,7 +348,7 @@ export default {
           let lines = e.target.result.split("\n");
           for (let i = 0; i < lines.length; i++) {
             let line = lines[i].split(",");
-            if (i > 1 && line[1]) {
+            if (line[2] == "买入" || line[2] == "卖出") {
               //name, code, opt, price, num, ctime
               this.insertData(
                 line[0],
