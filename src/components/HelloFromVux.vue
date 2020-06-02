@@ -71,7 +71,7 @@
           </div>
         </flexbox-item>
         <flexbox-item>
-          <x-button type="primary" link="/demo">导出</x-button>
+          <x-button type="primary" @click.native="exCsv">导出</x-button>
         </flexbox-item>
       </flexbox>
 
@@ -301,7 +301,44 @@ export default {
         // do something
       };
     },
+    exCsv() {
+      console.log("excsv");
+      let filename = "交易记录.csv";
+      const BOM = "\uFEFF";
+      let header = "名称,代码,类型,成交价,数量,时间" + "\r\n";
+      let csv = BOM + header;
 
+      for (let i = 0; i < this.logs.length; i++) {
+        let item = this.logs[i];
+        let line =
+          item.name +
+          "," +
+          item.code +
+          "," +
+          item.opt +
+          "," +
+          item.price +
+          "," +
+          item.num +
+          "," +
+          item.ctime +
+          "\r\n";
+        csv = csv + line;
+      }
+      let blob = new Blob([csv]);
+      if (navigator.msSaveOrOpenBlob) {
+        navigator.msSaveOrOpenBlob(blob, filename);
+      } else {
+        let url = URL.createObjectURL(blob);
+        let downloadLink = document.createElement("a");
+        downloadLink.href = url;
+        downloadLink.download = filename;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(url);
+      }
+    },
     tirggerFile($event) {
       var file = event.target.files;
       if (window.FileReader) {
